@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/noobneil1/Pet-randomizerV2/refs/heads/main/Pet-randomizerV2"))()
